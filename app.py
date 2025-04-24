@@ -6,12 +6,16 @@ import os
 import re
 
 # --- CONFIG ---
-raw_host = os.getenv(
-    "QDRANT_HOST") or "2395df23-344c-4086-b107-fda95c30fce6.us-east-1-0.aws.cloud.qdrant.io"
-QDRANT_HOST = re.sub(r"^https?://", "", raw_host)  # Remove scheme if present
-QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+
+
+def get_secret(key):
+    return os.getenv(key) or st.secrets.get(key, "")
+
+
+QDRANT_API_KEY = get_secret("QDRANT_API_KEY")
+QDRANT_HOST = re.sub(r"^https?://", "", get_secret("QDRANT_HOST"))
 COLLECTION = "pve_documents"
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = get_secret("OPENAI_API_KEY")
 GROUP_ID = "26is7eICcEiiiLVb6TK7tw"
 
 # --- SETUP OPENAI KEY ---
