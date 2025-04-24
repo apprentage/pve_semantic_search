@@ -20,7 +20,10 @@ A lightweight Streamlit app for semantic search over PVE document embeddings usi
    ```bash
    streamlit run app.py
    ```
-http://localhost:8501/
+3. Open
+ http://localhost:8501/
+ or check out the [Demo on Streamlit](https://c9mf88m6tkfmczlozcqjnc.streamlit.app/)
+
 
 
 ## 💡 Features
