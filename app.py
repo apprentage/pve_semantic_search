@@ -6,7 +6,8 @@ import os
 import re
 
 # --- CONFIG ---
-raw_host = os.getenv("QDRANT_HOST") or "2395df23-344c-4086-b107-fda95c30fce6.us-east-1-0.aws.cloud.qdrant.io"
+raw_host = os.getenv(
+    "QDRANT_HOST") or "2395df23-344c-4086-b107-fda95c30fce6.us-east-1-0.aws.cloud.qdrant.io"
 QDRANT_HOST = re.sub(r"^https?://", "", raw_host)  # Remove scheme if present
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 COLLECTION = "pve_documents"
@@ -17,9 +18,13 @@ GROUP_ID = "26is7eICcEiiiLVb6TK7tw"
 openai.api_key = OPENAI_API_KEY
 
 # --- EMBED TEXT ---
+
+
 def embed_text(text: str) -> list[float]:
-    response = openai.Embedding.create(input=text, model="text-embedding-3-large")
+    response = openai.Embedding.create(
+        input=text, model="text-embedding-3-large")
     return response["data"][0]["embedding"]
+
 
 # --- CONNECT TO QDRANT ---
 qdrant = QdrantClient(url=f"https://{QDRANT_HOST}", api_key=QDRANT_API_KEY)
@@ -41,7 +46,8 @@ with col2:
     if st.button("Hazardous materials handling policy"):
         st.session_state.query = "Hazardous materials handling policy"
 
-query = st.text_input("Or enter your own query:", value=st.session_state.get("query", ""))
+query = st.text_input("Or enter your own query:",
+                      value=st.session_state.get("query", ""))
 
 if st.button("Search") and query:
     st.info("Embedding query and searching...")
@@ -63,20 +69,37 @@ if st.button("Search") and query:
             query_filter=group_filter
         )
 
-        if results:
-            for point in results:
-                score = point.score
-                if score < 0.3:
-                    badge = "🟢"
-                elif score < 0.5:
-                    badge = "🟡"
-                else:
-                    badge = "🔴"
+        summaries = []
+        for point in results:
+            score = point.score
+            text = point.payload.get("rawText", "")[:1000]
+            summaries.append({"score": score, "text": text})
 
-                st.markdown(f"**Score**: {score:.4f} {badge}")
-                st.markdown(f"**Text**: {point.payload.get('rawText', '')[:500]}...")
+        if summaries:
+            context = "\n\n".join(
+                [f"Score: {s['score']:.4f}\nText: {s['text']}" for s in summaries])
+            system_msg = "You are a helpful assistant summarizing document excerpts. Provide a 1-2 sentence summary answering the user's question based only on the provided content."
+            messages = [
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": f"The user asked: '{query}'. Here is the context:\n\n{context}"}
+            ]
+            summary = openai.ChatCompletion.create(
+                model="gpt-4o",
+                messages=messages,
+                temperature=0.2
+            )["choices"][0]["message"]["content"]
+
+            st.success("Summary:")
+            st.markdown(summary)
+            st.markdown("---")
+
+            for s in summaries:
+                badge = "🔴" if s["score"] < 0.3 else "🟡" if s["score"] < 0.5 else "🟢"
+                st.markdown(f"**Score**: {s['score']:.4f} {badge}")
+                st.markdown(f"**Text**: {s['text']}...")
                 st.markdown("---")
         else:
-            st.warning("No results found")
+            st.warning(
+                "No results found.\n\n❗️ There are no specific details available regarding that topic within the documents.")
     except Exception as e:
         st.error(f"Search failed: {e}")
