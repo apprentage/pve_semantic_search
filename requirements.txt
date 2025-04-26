@@ -1,3 +1,4 @@
 streamlit
-openai>=1.0.0
+openai
 qdrant-client
+sentence-transformers
