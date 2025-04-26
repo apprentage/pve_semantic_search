@@ -5,19 +5,21 @@ import warnings
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue, SearchParams
 from openai import OpenAI
+
 # Disable warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # --- STREAMLIT CHECK ---
-IS_STREAMLIT = True  # Already imported above, no need to try/except
-
+IS_STREAMLIT = True
 
 # --- LOGGING HELPERS ---
+
+
 def log(msg):
     if IS_STREAMLIT:
         st.write(msg)
     else:
-        print(msg)  # fallback to stdout for local/CLI
+        print(msg)
 
 
 def log_error(msg):
@@ -26,11 +28,10 @@ def log_error(msg):
     else:
         print("ERROR:", msg)
 
-
 # --- CONFIGURATION ---
-# --- SECRETS MANAGEMENT ---
+
+
 def get_secret(key):
-    # Prefer Streamlit secrets, fallback to env
     return os.getenv(key) or (st.secrets.get(key, "") if hasattr(st, 'secrets') else "")
 
 
@@ -47,21 +48,6 @@ except Exception as e:
     log_error(f"Failed to initialize OpenAI client: {e}")
     client = None
 
-# --- EMBEDDING FUNCTION ---
-
-
-def embed_text(text: str) -> list[float]:
-    try:
-        response = client.embeddings.create(
-            input=text,
-            model="text-embedding-3-large"
-        )
-        return response.data[0].embedding
-    except Exception as e:
-        log_error(f"Embedding failed: {e}")
-        return []
-
-
 # --- CONNECT TO QDRANT ---
 try:
     qdrant = QdrantClient(url=f"https://{QDRANT_HOST}", api_key=QDRANT_API_KEY)
@@ -69,11 +55,28 @@ except Exception as e:
     log_error(f"Failed to connect to Qdrant: {e}")
     qdrant = None
 
+# ---  FUNCTIONS ---
+
+
+def safe_unicode(text):
+    try:
+        return text.encode('utf-16', 'surrogatepass').decode('utf-16')
+    except Exception:
+        return text.encode('utf-8', 'ignore').decode('utf-8', 'ignore')
+
+
+def embed_openai(text):
+    response = client.embeddings.create(
+        input=text,
+        model="text-embedding-3-large"
+    )
+    return response.data[0].embedding
+
+
 # --- STREAMLIT UI ---
 st.set_page_config(page_title="PVE Semantic Search", layout="wide")
 st.title("🏗️ PVE Semantic Document Search")
 
-# Initialize session state for query
 if "query" not in st.session_state:
     st.session_state.query = ""
 
@@ -90,16 +93,14 @@ with col1:
 with col2:
     if st.button("What happens if the client cancels the project?"):
         st.session_state.query = "What happens if the client cancels the project?"
-    if st.button("Hazardous materials handling policy"):
-        st.session_state.query = "Hazardous materials handling policy"
+    if st.button("What are some new engineering code changes in 2021?"):
+        st.session_state.query = "What are some new engineering code changes in 2021?"
     if st.button("What building codes must be followed for commercial projects?"):
         st.session_state.query = "What building codes must be followed for commercial projects?"
 
-# Search input
 query = st.text_input("Or enter your own query:", value=st.session_state.query)
 
 if st.button("Search") and query:
-    # --- REQUIREMENTS CHECK ---
     if not os.path.exists("requirements.txt"):
         st.warning(
             "requirements.txt not found. Please ensure all dependencies are listed for deployment.")
@@ -107,20 +108,23 @@ if st.button("Search") and query:
         try:
             if not client or not qdrant:
                 raise RuntimeError("API clients not initialized.")
-            query_vector = embed_text(query)
-            if not query_vector:
-                raise RuntimeError("Failed to get embedding for query.")
-            # Prepare filter
+
+            openai_vector = embed_openai(query)
+
             group_filter = Filter(must=[
                 FieldCondition(
-                    key="group_id", match=MatchValue(value=GROUP_ID))
+                    key="group_id", match=MatchValue(value=GROUP_ID)
+                )
             ])
-            # Perform vector search
+
             results = qdrant.search(
                 collection_name=COLLECTION,
-                query_vector=query_vector,
+                query_vector={
+                    "name": "openai-3-large",
+                    "vector": openai_vector
+                },
                 limit=10,
-                search_params=SearchParams(hnsw_ef=64, exact=False),
+                search_params=SearchParams(hnsw_ef=512, exact=False),
                 with_payload=True,
                 query_filter=group_filter
             )
@@ -133,7 +137,8 @@ if st.button("Search") and query:
 
             if summaries:
                 context = "\n\n".join(
-                    [f"Score: {s['score']:.4f}\nText: {s['text']}" for s in summaries])
+                    [f"Score: {s['score']:.4f}\nText: {s['text']}" for s in summaries]
+                )
                 system_msg = "You are a helpful assistant summarizing document excerpts. Provide a 1-2 sentence summary answering the user's question based only on the provided content."
                 messages = [
                     {"role": "system", "content": system_msg},
@@ -153,7 +158,7 @@ if st.button("Search") and query:
                 for s in summaries:
                     badge = "🔴" if s["score"] < 0.3 else "🟡" if s["score"] < 0.5 else "🟢"
                     st.markdown(f"**Score**: {s['score']:.4f} {badge}")
-                    st.markdown(f"**Text**: {s['text']}...")
+                    st.markdown(f"**Text**: {safe_unicode(s['text'])}...")
                     st.markdown("---")
             else:
                 st.warning(
