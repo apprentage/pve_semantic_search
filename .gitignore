@@ -1,0 +1,57 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+*.pyd
+
+# ---- Virtual Environment (uv and others) ----
+.venv/
+venv/
+ENV/
+env/
+.ENV/
+.env/
+env.bak/
+venv.bak/
+.uv/
+
+# ---- VSCode ----
+.vscode/
+
+# ---- macOS ----
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+*.swp
+
+# ---- Logs, Databases, and Caches ----
+*.log
+*.sqlite3
+*.db
+*.tmp
+*.bak
+*.old
+
+# ---- Streamlit ----
+.streamlit/config.toml
+.streamlit/credentials.toml
+
+# ---- Testing and Coverage ----
+htmlcov/
+.coverage
+coverage.xml
+.cache/
+.pytest_cache/
+
+# ---- Miscellaneous ----
+*.pid
