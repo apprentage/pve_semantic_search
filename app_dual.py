@@ -146,5 +146,8 @@ if query:
         f"✅ Summary using **{source_used}** vectors (Query Embed: {embed_duration}s | MiniLM: {minilm_time}s | OpenAI: {openai_time}s)")
     st.markdown(summary)
 
-    st.subheader(f"📌 Top Results from {source_used} Vector")
-    render_results(chosen_results, source_used)
+    st.subheader("🔹 Top Results from MiniLM Vector")
+    render_results(minilm_results, "MiniLM")
+
+    st.subheader("🔸 Top Results from OpenAI Vector")
+    render_results(openai_results, "OpenAI")
