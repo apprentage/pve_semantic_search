@@ -1,37 +1,81 @@
-# PVE Semantic Search App
+# 🧠 PVE Dual Vector Semantic Search
 
-A lightweight Streamlit app for semantic search over PVE document embeddings using Qdrant and OpenAI.
+A lightweight Streamlit app for semantic search over PVE document embeddings using Qdrant and dual embeddings (OpenAI + MiniLM).
 
-## 🔧 Setup
+---
 
-1. Create a `.env` or export these variables in your shell:
-   ```bash
-   export OPENAI_API_KEY=your-openai-key
-   export QDRANT_API_KEY=your-qdrant-key
-   export QDRANT_HOST=https://your-qdrant-instance
-   ```
+## 🔧 Setup with `uv`
 
-2. Install dependencies:
-   ```bash
-   pip install streamlit qdrant-client openai
-   ```
+### 1. Install `uv` (if not already):
 
-3. Run the app:
-   ```bash
-   streamlit run app.py
-   ```
-3. Open
- http://localhost:8501/
- or check out the [Demo on Streamlit](https://c9mf88m6tkfmczlozcqjnc.streamlit.app/)
+```bash
+curl -Ls https://astral.sh/uv/install.sh | bash
+```
 
+### 2. Set required environment variables (via `.env` or export):
 
+```bash
+export OPENAI_API_KEY=your-openai-key
+export QDRANT_API_KEY=your-qdrant-key
+export QDRANT_HOST=https://your-qdrant-instance
+```
+
+Or create a `.streamlit/secrets.toml` file:
+
+```toml
+OPENAI_API_KEY = "your-openai-key"
+QDRANT_API_KEY = "your-qdrant-key"
+QDRANT_HOST = "https://your-qdrant-instance"
+```
+
+### 3. Install Python dependencies:
+
+```bash
+uv pip install -r requirements.txt
+```
+
+> 💡 Tip: If `streamlit` fails to run due to an old Python link, remove it with:
+```bash
+sudo rm -f /usr/local/bin/streamlit
+```
+
+---
+
+## 🚀 Run the App
+
+```bash
+uv run streamlit run app_dual.py
+```
+
+Then open:
+
+[http://localhost:8501](http://localhost:8501)
+
+---
 
 ## 💡 Features
 
-- Textbox + prefilled query prompts
-- Color-coded result scores
-- Vector search with cosine similarity (using OpenAI embeddings)
+- ✅ Dual-vector search using:
+  - `openai-3-large` (3072-dim)
+  - `all_minilm_embeddings` (768-dim mean + max pooled)
+- ✅ Color-coded results with score
+- ✅ GPT-4 summary of top results
+- ✅ Fallback logic if one model fails
 
+---
 
+## 📁 Project Structure
 
-![image](https://github.com/user-attachments/assets/b56d1bac-3fbd-441f-96db-5442df1ac1d8)
+- `app_dual.py` – Main Streamlit UI
+- `requirements.txt` – All dependencies
+- `README.md` – This file
+- `JSONL/` – Embedded documents (input)
+- `.streamlit/secrets.toml` – Secure keys (optional)
+
+---
+
+## 🧪 Example Query
+
+> What building codes must be followed for commercial projects?
+
+Try variations and inspect the vector scores + GPT summary!
