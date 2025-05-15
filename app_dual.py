@@ -116,7 +116,7 @@ def render_results(results, source):
             f"**Score:** `{score}` {'🟢' if score >= 0.6 else '🟡' if score >= 0.4 else '🔴'}  | **Page:** {page}  | **Model:** {source}")
         st.markdown(f"`refId:` {ref}")
         if meta:
-            st.markdown(f"`Metadata:` {meta}")
+            st.markdown(f"`Keywords:` {meta}")
         st.markdown(text[:800] + "..." if len(text) > 800 else text)
         st.markdown("---")
 
