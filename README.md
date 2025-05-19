@@ -51,6 +51,10 @@ Then open:
 
 [http://localhost:8501](http://localhost:8501)
 
+or browse the demo
+
+[https://pve-dual-search.streamlit.app/](https://pve-dual-search.streamlit.app/)
+
 ---
 
 ## 💡 Features
